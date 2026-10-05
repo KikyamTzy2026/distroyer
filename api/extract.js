@@ -21,16 +21,19 @@ module.exports=async(req,res)=>{
       const parts=[];
       imgs.forEach((data,i)=>{parts.push({text:"Image "+(i+1)+":"});parts.push({inline_data:{mime_type:"image/jpeg",data}})});
       parts.push({text:PROMPT});
-      const model=process.env.MODEL||"gemini-3.8-flash";
+      const models=process.env.MODEL?[process.env.MODEL]:["gemini-3.8-flash","gemini-3.7-flash","gemini-3.5-flash","gemini-3.5-flash-lite"];
       let r;
-      for(let t=0;t<4;t++){
-        r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
-          method:"POST",
-          headers:{"content-type":"application/json","x-goog-api-key":gk},
-          body:JSON.stringify({contents:[{parts}],generationConfig:{temperature:0,responseMimeType:"application/json"}})
-        });
+      for(const model of models){
+        for(let t=0;t<2;t++){
+          r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent",{
+            method:"POST",
+            headers:{"content-type":"application/json","x-goog-api-key":gk},
+            body:JSON.stringify({contents:[{parts}],generationConfig:{temperature:0,responseMimeType:"application/json"}})
+          });
+          if(r.status!==503&&r.status!==429)break;
+          await new Promise(ok=>setTimeout(ok,2000));
+        }
         if(r.status!==503&&r.status!==429)break;
-        await new Promise(ok=>setTimeout(ok,3000*(t+1)));
       }
       const j=await r.json();
       if(!r.ok)return res.status(502).json({error:(j.error&&j.error.message)||"Gemini API error"});
