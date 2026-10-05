@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Distro to FTE Tool</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mu:#5d6773;--bd:#d5dae0;--ac:#1f6feb;--acx:#fff;--ok:#1a7f37;--er:#c62828;--in:#fffbe0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171a;--card:#1d2126;--tx:#e8ebee;--mu:#9aa5b1;--bd:#363d45;--ac:#4c8dff;--acx:#0b1220;--ok:#4cc16b;--er:#ff7b72;--in:#2b2a14}}
+:root[data-theme="dark"]{--bg:#14171a;--card:#1d2126;--tx:#e8ebee;--mu:#9aa5b1;--bd:#363d45;--ac:#4c8dff;--acx:#0b1220;--ok:#4cc16b;--er:#ff7b72;--in:#2b2a14}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Arial,Helvetica,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:0 0 8px}
+p.s{color:var(--mu);margin:0 0 14px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
+.ups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.drop{border:2px dashed var(--bd);border-radius:8px;padding:10px;text-align:center;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.drop.on{border-color:var(--ac)}
+.drop img{max-width:100%;max-height:140px;border-radius:4px}
+button{font:inherit;background:var(--ac);color:var(--acx);border:0;border-radius:6px;padding:7px 12px;cursor:pointer}
+button.g{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+#msg{margin-top:8px;color:var(--mu)}#msg.er{color:var(--er)}#msg.ok{color:var(--ok)}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid var(--bd);padding:4px 6px;text-align:center;font-size:13px}
+th{background:var(--bg)}td.l,th.l{text-align:left}
+input[type=text],input[type=number]{font:inherit;color:var(--tx);background:var(--in);border:1px solid var(--bd);border-radius:4px;padding:3px 5px;width:64px;text-align:center}
+td input.q{width:56px}
+textarea{width:100%;font:12px Consolas,monospace;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:8px;resize:vertical}
+.tot td{font-weight:bold;background:var(--bg)}
+.note{color:var(--mu);font-size:12px;margin-top:6px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>Distro to FTE Tool</h1>
+<p class="s">Upload your two images. The tool reads the quantities and the average minutes, builds the long FTE formula, and gives you each row ready to paste into SharePoint Excel.</p>
+
+<section>
+<h2>1. Upload images</h2>
+<div class="ups">
+<div class="drop" id="d1"><b>Task with Processor (Distro)</b><img id="p1" alt="" hidden><input type="file" id="f1" accept="image/*"></div>
+<div class="drop" id="d2"><b>Task Average Time</b><img id="p2" alt="" hidden><input type="file" id="f2" accept="image/*"></div>
+</div>
+<div class="row"><button id="go" disabled>Read images</button><input type="text" id="code" placeholder="Access code (if required)" style="width:170px"><span class="note">You can also paste a screenshot (Ctrl+V) and it fills the next empty box.</span></div>
+<div id="msg"></div>
+<details id="man"><summary><b>Manual entry (if image reading fails)</b></summary>
+<p class="note">Paste the Average Time table (task, then minutes, one per line) and the Distro table copied from Excel (first row = task headers, first column = Processor).</p>
+<textarea id="ma" rows="6" placeholder="Title Intake Inbox&#9;5"></textarea>
+<textarea id="md" rows="6" placeholder="Processor&#9;Title Intake Inbox&#9;..." style="margin-top:8px"></textarea>
+<div class="row"><button id="mgo">Use this data</button></div>
+</details>
+</section>
+
+<div id="res" hidden>
+<section>
+<h2>2. Task, column and average minutes</h2>
+<div class="sc"><table id="map"></table></div>
+<div class="row"><label>Divisor <input type="number" id="div" value="420"></label><label>First row <input type="number" id="r0" value="8"></label></div>
+<div class="note">Edit any column letter or minutes if needed. Leave a column blank to exclude that task. Check every value against your images.</div>
+</section>
+
+<section>
+<h2>3. FTE formula</h2>
+<textarea id="fx" rows="3" readonly></textarea>
+<div class="row"><button id="cf">Copy formula (first row)</button><button class="g" id="ca">Copy formula for all rows</button></div>
+</section>
+
+<section>
+<h2>4. Quantities by row</h2>
+<div class="sc"><table id="grid"></table></div>
+<div class="row"><button id="cn" class="g">Copy names</button><button id="cq">Copy all rows</button></div>
+<div class="note">Each row copies from column G, with tabs for the gaps, so paste into cell G of the matching row. Compare the TOTAL row with your Distro image.</div>
+</section>
+</div>
+</main>
+<script>
+const SLOTS=["G","K","O","S","W","AA","AE","AI","AM","AQ","AU","AY"];
+const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,"");
+const DEF={};
+[["E-Filing (W/ Fee)","G"],["Title Intake Inbox","K"],["Boarding ISN Referral","O"],["HUD OCC Letter Prep with Mailing Letters","W"],["Reviewing Referral Docs for FDL","AA"],["Drafting FDL for Foreclosure","AE"],["Inbound Mail Processing","AI"],["Inbound E-Serve Processing","AM"],["IMAIL Cost TCE to Add","AQ"],["Documenting IMAIL Artifacts in PP","AY"]].forEach(([n,c])=>DEF[norm(n)]=c);
+const ci=c=>c.split("").reduce((n,ch)=>n*26+ch.charCodeAt(0)-64,0);
+const $=id=>document.getElementById(id);
+let files=[null,null],tasks=[],procs=[];
+
+function setFile(i,f){
+  if(!f)return;files[i]=f;
+  const r=new FileReader();r.onload=()=>{const im=$("p"+(i+1));im.src=r.result;im.hidden=false};r.readAsDataURL(f);
+  $("go").disabled=!(files[0]&&files[1]);
+}
+$("f1").onchange=e=>setFile(0,e.target.files[0]);
+$("f2").onchange=e=>setFile(1,e.target.files[0]);
+document.addEventListener("paste",e=>{
+  const it=[...(e.clipboardData?.files||[])].find(f=>f.type.startsWith("image/"));
+  if(!it)return;setFile(files[0]?1:0,it);
+});
+function say(t,c){const m=$("msg");m.textContent=t;m.className=c||""}
+
+$("go").onclick=async()=>{
+  $("go").disabled=true;say("Reading images... this can take up to a minute.");
+    try{
+    if(location.protocol==="file:")throw new Error("This only works from your deployed Vercel URL, not from a downloaded file. Use Manual entry offline.");
+    const images=await Promise.all(files.map(toB64));
+    const r=await fetch("/api/extract",{method:"POST",headers:{"content-type":"application/json","x-access-code":$("code").value.trim()},body:JSON.stringify({images})});
+    let d;try{d=await r.json()}catch(_){throw new Error("The /api/extract route was not found. Deploy the whole folder, including the api folder, to Vercel.")}
+    if(!r.ok)throw new Error(d.error||"Request failed");
+    build(d);say("Done. Verify the values against your images before pasting.","ok");
+  }catch(e){say("Could not read the images: "+(e.message==="Failed to fetch"?"could not reach /api/extract. Open the site from its Vercel URL and make sure the deployment finished.":e.message),"er");}
+  $("go").disabled=false;
+};
+
+
+$("mgo").onclick=()=>{
+  const avg=[];
+  $("ma").value.split("\n").forEach(l=>{const m=l.trim().match(/^(.*\S)\s+(\d+(?:\.\d+)?)$/);if(m)avg.push({task:m[1].trim(),mins:Number(m[2])})});
+  const lines=$("md").value.split("\n").filter(l=>l.trim());
+  if(!lines.length||!avg.length){say("Paste both tables first.","er");return}
+  const head=lines[0].split("\t").map(x=>x.trim());
+  const keep=[];head.forEach((h,i)=>{if(i>0&&h&&!/^(processor|total fte|assigned account)$/i.test(h))keep.push(i)});
+  const processors=[];
+  lines.slice(1).forEach(l=>{
+    const c=l.split("\t"),n=(c[0]||"").trim();
+    if(!n||/^(total|distro)/i.test(n))return;
+    const quantities=[];keep.forEach(i=>{const v=(c[i]||"").trim();if(v!==""&&!isNaN(v))quantities.push({task:head[i],qty:Number(v)})});
+    processors.push({name:n,quantities});
+  });
+  build({distroTasks:keep.map(i=>head[i]),averages:avg,processors});
+  say("Loaded. Verify the values against your images before pasting.","ok");
+};
+
+function build(d){
+  const avg={};(d.averages||[]).forEach(a=>avg[norm(a.task)]=a);
+  const names=[...(d.distroTasks||[])];
+  const inD=new Set(names.map(norm));
+  (d.averages||[]).forEach(a=>{if(!inD.has(norm(a.task)))names.push(a.task)});
+  const used=new Set();
+  tasks=names.map(n=>{
+    const k=norm(n),a=avg[k];
+    return{name:n,mins:a&&typeof a.mins==="number"?a.mins:"",col:"",inD:inD.has(k)};
+  });
+  tasks.filter(t=>t.inD).forEach(t=>{const c=DEF[norm(t.name)];if(c&&!used.has(c)){t.col=c;used.add(c)}});
+  tasks.filter(t=>t.inD&&!t.col).forEach(t=>{const c=SLOTS.find(s=>!used.has(s));if(c){t.col=c;used.add(c)}});
+  procs=(d.processors||[]).map(p=>{
+    const q={};(p.quantities||[]).forEach(x=>{if(typeof x.qty==="number")q[norm(x.task)]=x.qty});
+    return{name:p.name,q};
+  });
+  $("res").hidden=false;drawMap();drawGrid();
+}
+
+function drawMap(){
+  const t=$("map");t.textContent="";
+  const h=t.insertRow();["Task","Column","Ave Mins"].forEach((x,i)=>{const c=document.createElement("th");c.textContent=x;if(!i)c.className="l";h.appendChild(c)});
+  tasks.forEach(k=>{
+    const r=t.insertRow();
+    const a=r.insertCell();a.className="l";a.textContent=k.name+(k.inD?"":"  (not in Distro)");
+    const b=r.insertCell(),i1=document.createElement("input");i1.type="text";i1.value=k.col;
+    i1.onchange=()=>{k.col=i1.value.trim().toUpperCase().replace(/[^A-Z]/g,"");i1.value=k.col;drawGrid()};b.appendChild(i1);
+    const c=r.insertCell(),i2=document.createElement("input");i2.type="number";i2.value=k.mins;
+    i2.onchange=()=>{k.mins=i2.value===""?"":Number(i2.value);refresh()};c.appendChild(i2);
+  });
+}
+const active=()=>tasks.filter(t=>t.col&&t.mins!=="").sort((a,b)=>ci(a.col)-ci(b.col));
+const num=v=>v===undefined||v===""?0:Number(v);
+
+function drawGrid(){
+  const t=$("grid");t.textContent="";
+  const cols=tasks.filter(x=>x.col).sort((a,b)=>ci(a.col)-ci(b.col));
+  const h=t.insertRow();
+  ["Processor",...cols.map(x=>x.col+" - "+x.name),"FTE"].forEach((x,i)=>{const c=document.createElement("th");c.textContent=x;if(!i)c.className="l";h.appendChild(c)});
+  h.insertCell().outerHTML="<th>Copy</th>";
+  procs.forEach((p,pi)=>{
+    const r=t.insertRow();r.insertCell().textContent=p.name;r.cells[0].className="l";
+    cols.forEach(k=>{
+      const c=r.insertCell(),i=document.createElement("input");i.type="number";i.className="q";
+      const v=p.q[norm(k.name)];i.value=v===undefined?"":v;
+      i.oninput=()=>{if(i.value==="")delete p.q[norm(k.name)];else p.q[norm(k.name)]=Number(i.value);refresh()};
+      c.appendChild(i);
+    });
+    const f=r.insertCell();f.id="fte"+pi;
+    const b=document.createElement("button");b.className="g";b.textContent="Copy row";b.onclick=()=>copy(rowText(p),b);r.insertCell().appendChild(b);
+  });
+  const tr=t.insertRow();tr.className="tot";tr.insertCell().textContent="TOTAL";tr.cells[0].className="l";
+  cols.forEach((k,i)=>{const c=tr.insertCell();c.id="tot"+i});
+  tr.insertCell().id="totf";tr.insertCell();
+  refresh();
+}
+
+function fte(p){
+  const d=Number($("div").value)||420;
+  return active().reduce((s,k)=>s+num(p.q[norm(k.name)])*k.mins,0)/d;
+}
+function refresh(){
+  const cols=tasks.filter(x=>x.col).sort((a,b)=>ci(a.col)-ci(b.col));
+  let tf=0;
+  procs.forEach((p,i)=>{const e=$("fte"+i);if(e){const v=fte(p);tf+=v;e.textContent=v.toFixed(2)}});
+  cols.forEach((k,i)=>{const e=$("tot"+i);if(e)e.textContent=procs.reduce((s,p)=>s+num(p.q[norm(k.name)]),0)});
+  const e=$("totf");if(e)e.textContent=tf.toFixed(2);
+  $("fx").value=formula(Number($("r0").value)||8);
+}
+function formula(r){
+  const d=Number($("div").value)||420;
+  return "=(("+active().map(k=>"("+k.col+r+"*"+k.mins+")").join("+")+"))/"+d;
+}
+function rowText(p){
+  const cols=tasks.filter(x=>x.col);
+  const lo=Math.min(ci("G"),...cols.map(k=>ci(k.col))),hi=Math.max(...cols.map(k=>ci(k.col)));
+  const out=[];
+  for(let n=lo;n<=hi;n++){
+    const k=cols.find(x=>ci(x.col)===n);
+    const v=k?p.q[norm(k.name)]:undefined;out.push(v===undefined?"":v);
+  }
+  return out.join("\t");
+}
+$("div").onchange=refresh;$("r0").onchange=refresh;
+async function toB64(f){
+  const b=await createImageBitmap(f),k=Math.min(1,2000/Math.max(b.width,b.height));
+  const c=document.createElement("canvas");c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);
+  c.getContext("2d").drawImage(b,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",0.92).split(",")[1];
+}
+async function copy(text,btn){
+  try{await navigator.clipboard.writeText(text)}
+  catch(e){const a=document.createElement("textarea");a.value=text;document.body.appendChild(a);a.select();try{document.execCommand("copy")}catch(_){}a.remove()}
+  if(btn){const o=btn.textContent;btn.textContent="Copied";setTimeout(()=>btn.textContent=o,1200)}
+}
+$("cf").onclick=e=>copy($("fx").value,e.target);
+$("ca").onclick=e=>{const r0=Number($("r0").value)||8;copy(procs.map((_,i)=>formula(r0+i)).join("\n"),e.target)};
+$("cn").onclick=e=>copy(procs.map(p=>p.name).join("\n"),e.target);
+$("cq").onclick=e=>copy(procs.map(rowText).join("\n"),e.target);
+</script>
+</body>
+</html>
